@@ -11,8 +11,7 @@ function AiAnalysis(){
 	const [file, setFile] = useState(null);
     const  [error,setError]=useState(""); 
 
-     let activeRequest = useRef(null); //shared promise for post() request
-   //  Use useRef so the shared promise persists between re-renders
+     let activeRequest = useRef(null); 
 
     const onFileChange = (event) => {
 		setFile(event.target.files[0]);
@@ -22,12 +21,10 @@ function AiAnalysis(){
    
     e.preventDefault();
     const formData = new FormData();
-   // 2. Append the raw file object directly under the key 'video'
+ 
     formData.append("video", file);
 
-    formData.append("userId", userId);//// 3. Append the userId as a separate field so the backend can read it
-    
- // If a request is already running, reuse the existing promise and exit early
+    formData.append("userId", userId);
     if(activeRequest.current){
     try{
       const res=  await activeRequest.current;
@@ -43,9 +40,9 @@ function AiAnalysis(){
 
 
    try{
-     setupLoading(true);//Turn on the loading indicator BEFORE the network call begins
+     setupLoading(true);
 
-    //  Assign the API call promise to the shared variable
+   
     activeRequest.current=apiPrivate.post("/info/analysis",formData);
    
      const res=  await activeRequest.current;
@@ -57,7 +54,7 @@ function AiAnalysis(){
     }
 
     finally{
-        //  Clear the promise when done (whether it succeeded or failed)
+       
         activeRequest.current=null;
         setupLoading(false)
     }
@@ -65,7 +62,7 @@ function AiAnalysis(){
 
 }
 
- //clear timeouts to prevent memory leaks or state bugs
+ 
     useEffect(() => {
         if (!message) return;
         const timer = setTimeout(() => setMessage(""), 3000);

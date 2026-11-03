@@ -60,23 +60,22 @@ export const videoWorker =new Worker('video-processing', async(job)=>{
     const localFilePath =path.resolve(process.cwd(),`tmp/${gDriveFileId}.mp4`);
        
     try{
-        // 1. Update MongoDB to PROCESSING
+        
         await Analysis.findByIdAndUpdate(analysisId,{status:'PROCESSING'})
-       // 2. Download the video from Google Drive to the local worker disk
+      
         await downloadFromDrive(gDriveFileId,localFilePath);
-      // 3. Execute the Python Deepfake Detection Script
-    // Passes the local file path to your Python environment
+    
        const {stdout,stderr} =await execPromise(`python3 AIModel/worker_cli.py --video "${localFilePath}"`);
       
 
 
      
-       // Parse the JSON output from your Python script
+       
         const result =JSON.parse(stdout);
-        // 4. Update MongoDB with SUCCESS and the metrics
+      
         await Analysis.findByIdAndUpdate(analysisId,{
             status:'SUCCESS',
-            prediction:result.prediction, // 'REAL' or 'FAKE'
+            prediction:result.prediction, 
             confidence:result.confidence,
             metrics:{
                 faceNeckCorrelation:result.faceNeckCorrelation,
@@ -89,19 +88,19 @@ export const videoWorker =new Worker('video-processing', async(job)=>{
     }
     catch(error){
         console.error(`Job ${job.id}:`,error);
-         // Mark as FAILED in MongoDB
+     
         await Analysis.findByIdAndUpdate(analysisId,{
             status:'FAILED',
             error:error.message || 'unknow error'
         })
-        throw error;// Let BullMQ handle the retry logic
+        throw error;
     }
    finally{
-    //5. Always delete from local disk to prevent filling up the server
+    
     if(fs.existsSync(localFilePath)){
         fs.unlinkSync(localFilePath);
     }
-     // 6. Delete from Google Drive   
+       
     try{
         await drive.files.delete({fileId:gDriveFileId});
         console.log(`clean up file ${gDriveFileId} from google drive`)
@@ -121,7 +120,6 @@ videoWorker.on('active', (job) => {
 
 
 
-// Handle worker-level errors (e.g., Redis connection drops)
 videoWorker.on('error',(err)=>{
     console.error('BullMQ Worker Error:',err);
 })
